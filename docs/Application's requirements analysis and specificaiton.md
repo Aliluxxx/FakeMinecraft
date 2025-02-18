@@ -9,6 +9,7 @@ Multiplayer support will be one of the main game's aspects, so it needs to be de
 To implement it, it will be required to create a separate application called server.\
 The server purpose is to:
 	- welcome every player, unless they are in a ban list
+	- implement new possible commands to authenticate the player
 	- create the world and send it to every player
 
 	The player that hosts the server will automatically have the admin role
@@ -18,19 +19,25 @@ For starter, there will be only 5 types of cubes: grass, dirt, stone, wood and l
 - **Infinite procedural terrain generation**\
 The world will be infinite and randomly generated in all axes. There will be mountains, caves and planes and trees all over the surface
 - **Save world data**\
-Players can save the world whenever they want to do so. It is also required to implement an autosave feature every 6 minutes
+Players can save the world whenever they want to do so. It is also required to implement an autosave feature every 5 minutes
 - **GUI support**\
 Basic GUI support to pause the game, change settings, quit the game and select cube types from a menu.\
-Basic debug info visualization (FPS counter, ping, etc...)
+Basic debug info visualization (FPS counter, ping, coordinates, etc...)
 - **Textual chat**\
 Chat used to input commands or to chat with other players during a multiplayer session.\
 The commands will be:
 	- `/help` to get a list of all commands
-	- `/kick [PlayerID] {message}` to kick a player from a server (admin role required)
-	- `/ban [PlayerID] {message}` to ban a player from a server (admin role required)
-	- `/ban-ip [PlayerID] {message}` to ban the player's ip and id from a server (admin role required)
-	- `/pardon [PlayerID]` to remove the player's ban from a server (admin role required)
-	- `/pardon-ip [PlayerID]` same as `/pardon [PlayerID]` (admin role required)
+	- `/ping` to calculate the server ping in milliseconds
+	- `/dupeip [PlayerID]` to check all usernames linked to the same IP address (the banned users are marked in red, offline users in gray and online users in green)
+	- `/mutechat [PlayerID] {<timeout> | inf}` to ban the player from the textual chat
+	- `/mutevc [PlayerID] {<timeout> | inf}` to ban the player from the voice chat
+	- `/mute [PlayerID] {<timeout> | inf}` to ban the player from textual and voice chat
+	- `/kick [PlayerID] {message}` to kick a player from a server
+	- `/ban [PlayerID] {message}` to ban a player from a server
+	- `/ipban [PlayerID] {message}` to ban the player's ip and id from a server
+	- `/unban [PlayerID]` to remove the player's ban from a server
 	- `/op [PlayerID]` to give admin role to a player
 - **Proximity voice chat**\
 Voice chat to communicate with other players during a multiplayer session. The audio has to be 3D
+- **Mod & Plugin support**\
+Mods to edit world creation and plugins for servers to add new commands
