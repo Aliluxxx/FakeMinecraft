@@ -1,3 +1,6 @@
 [submodule "fm-core/libs/glfw"]
 	path = fm-core/libs/glfw
 	url = https://github.com/glfw/glfw
+[submodule "fm-core/libs/enet"]
+	path = fm-core/libs/enet
+	url = https://github.com/zpl-c/enet
