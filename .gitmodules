@@ -10,3 +10,6 @@
 [submodule "fm-core/libs/nfd"]
 	path = fm-core/libs/nfd
 	url = https://github.com/btzy/nativefiledialog-extended/
+[submodule "fm-core/libs/glm"]
+	path = fm-core/libs/glm
+	url = https://github.com/icaven/glm
