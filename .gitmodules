@@ -7,3 +7,6 @@
 [submodule "fm-core/libs/spdlog"]
 	path = fm-core/libs/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "fm-core/libs/nfd"]
+	path = fm-core/libs/nfd
+	url = https://github.com/btzy/nativefiledialog-extended/
