@@ -1,6 +1,8 @@
-#include "Core/Base/Base.h"
+#include "Core.h"
 
 int main() {
 
+	fm::Log::Init();
 
+	FM_INFO("Hello World!");
 }
