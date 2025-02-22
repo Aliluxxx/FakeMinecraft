@@ -16,7 +16,8 @@ files {
 includedirs {
 
 	"src",
-	"%{wks.location}/fm-core/src"
+	"%{wks.location}/fm-core/src",
+	"%{IncludeDir.spdlog}"
 }
 
 -- Windows
@@ -30,6 +31,11 @@ filter "system:windows"
 -- Static
 filter "configurations:*Static"
 	defines "FM_STATIC"
+
+	links {
+
+		"nfd"
+	}
 
 -- Shared
 filter "configurations:*DLL or *Shared"
@@ -61,5 +67,6 @@ filter {}
 postbuildcommands {
 
 	("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/resources"),
-	("{COPYDIR} %{wks.location}/fm-server/resources ../bin/" .. outputdir .. "/%{prj.name}/resources")
+	("{MKDIR} %{wks.location}/fm-client/resources"),
+	("{COPYDIR} %{wks.location}/fm-client/resources ../bin/" .. outputdir .. "/%{prj.name}/resources")
 }

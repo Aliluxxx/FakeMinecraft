@@ -1,3 +1,4 @@
+kind "ConsoleApp"
 staticruntime ("" .. sruntime .. "")
 language "C++"
 cppdialect "C++20"
@@ -8,26 +9,39 @@ files {
 
 	"**.lua",
 	"src/*",
-	"src/Core/**",
+	"src/**.h", "src/**.cpp", "src/**.inl",
 	"%{wks.location}/%{prj.name}/resources/**"
 }
 
 includedirs {
 
-	"src"
+	"src",
+	"%{wks.location}/fm-core/src",
+	"%{IncludeDir.enet}",
+	"%{IncludeDir.spdlog}",
+	"%{IncludeDir.nfd}",
+	"%{IncludeDir.glm}"
 }
-
-defines "FM_ENGINE"
 
 -- Windows
 filter "system:windows"
-	pchheader "fmpch.h"
-	pchsource "src/fmpch.cpp"
 	defines {
 
 		"FM_PLATFORM_WINDOWS",
 		"_CRT_SECURE_NO_WARNINGS"
 	}
+
+-- Static
+filter "configurations:*Static"
+	defines "FM_STATIC"
+
+	links {
+
+		"nfd"
+	}
+
+-- Shared
+filter "configurations:*DLL or *Shared"
 
 -- Debug
 filter "configurations:Debug*"
@@ -50,37 +64,12 @@ filter "configurations:Dist*"
 	symbols "Off"
 	optimize "On"
 
--- Static
-filter "configurations:*Static"
-	kind "StaticLib"
-	defines "FM_STATIC"
-
--- Shared
-filter "configurations:*DLL or *Shared"
-	kind "SharedLib"
-
-filter "configurations:*DLL"
-	defines "FM_BUILD_DLL"
-
-filter "configurations:*Shared"
-	defines "FM_BUILD_SHARED"
-
-filter { "Debug*", "kind:StaticLib" }
-	targetsuffix "-s-d"
-
-filter { "Debug*", "kind:SharedLib" }
-	targetsuffix "-d"
-
-filter { "Release*", "kind:StaticLib" }
-	targetsuffix "-s-r"
-
-filter { "Release*", "kind:SharedLib" }
-	targetsuffix "-r"
-
-filter { "Dist*", "kind:StaticLib" }
-	targetsuffix "-s"
-
-filter { "Dist*", "kind:SharedLib" }
-	targetsuffix ""
-
 filter {}
+
+-- Post build commands
+postbuildcommands {
+
+	("{MKDIR} ../bin/" .. outputdir .. "/%{prj.name}/resources"),
+	("{MKDIR} %{wks.location}/fm-server/resources"),
+	("{COPYDIR} %{wks.location}/fm-server/resources ../bin/" .. outputdir .. "/%{prj.name}/resources")
+}

@@ -1,7 +1,7 @@
 project "fm-server"
 	location "."
 
-	include "shared.lua"
+	include "common.lua"
 
 	includedirs {
 
@@ -12,3 +12,9 @@ project "fm-server"
 
 		"fm-core"
 	}
+
+	filter "configurations:*Static"
+		links {
+
+			"glfw"
+		}

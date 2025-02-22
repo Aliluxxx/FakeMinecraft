@@ -1,9 +1,9 @@
 project "fm-server-headless"
 	location "."
 
-	include "shared.lua"
+	include "common.lua"
 
 	links {
 
-		"fm-core"
+		"fm-core-headless"
 	}
