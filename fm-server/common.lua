@@ -17,9 +17,7 @@ includedirs {
 
 	"src",
 	"%{wks.location}/fm-core/src",
-	"%{IncludeDir.enet}",
 	"%{IncludeDir.spdlog}",
-	"%{IncludeDir.nfd}",
 	"%{IncludeDir.glm}"
 }
 

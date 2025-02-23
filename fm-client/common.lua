@@ -17,7 +17,8 @@ includedirs {
 
 	"src",
 	"%{wks.location}/fm-core/src",
-	"%{IncludeDir.spdlog}"
+	"%{IncludeDir.spdlog}",
+	"%{IncludeDir.glm}"
 }
 
 -- Windows

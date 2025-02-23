@@ -6,7 +6,8 @@ project "fm-core"
 	files {
 
 		"src/Platform/GUI/*",
-		"src/Platform/GUI/Core/**"
+		"src/Platform/GUI/Core/**",
+		"src/Platform/GUI/Backend/GLFW/**"
 	}
 
 	includedirs {
