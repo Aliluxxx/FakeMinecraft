@@ -6,7 +6,6 @@ project "fm-client"
 	includedirs {
 
 		"%{wks.location}/fm-core/src/Platform/GUI"
-		
 	}
 
 	links {

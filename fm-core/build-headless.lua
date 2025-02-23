@@ -6,7 +6,8 @@ project "fm-core-headless"
 	files {
 
 		"src/Platform/Headless/*",
-		"src/Platform/Headless/Core/**"
+		"src/Platform/Headless/Core/**",
+		"src/Platform/Headless/Backend/*"
 	}
 
 	includedirs {
