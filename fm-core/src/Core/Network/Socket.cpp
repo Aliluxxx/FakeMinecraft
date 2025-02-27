@@ -11,6 +11,7 @@ namespace fm {
 	struct SocketData {
 
 		ENetHost* Host = { 0 };
+		ENetHost* ServerHost = { 0 };
 		ENetPeer* Peer = { 0 };
 		bool Connected = false;
 		IpAddress RemoteAddress = IpAddress::Invalid;
@@ -40,10 +41,6 @@ namespace fm {
 	Socket::~Socket() {
 
 		Disconnect();
-
-		if (m_Thread && m_Thread->joinable())
-			m_Thread->join();
-
 		Socket::Shutdown();
 	}
 
@@ -143,10 +140,71 @@ namespace fm {
 		return Status::Done;
 	}
 
-	void Socket::Disconnect() {
+	Uint32 Socket::Ping(IpAddress address, Uint16 port) {
 
-		if (!IsConnected())
-			return;
+		ENetHost* host = enet_host_create(NULL /* create a client host */,
+			1 /* only allow 1 outgoing connection */,
+			2 /* allow up 2 channels to be used, 0 and 1 */,
+			0 /* assume any amount of incoming bandwidth */,
+			0 /* assume any amount of outgoing bandwidth */);
+
+		if (host == NULL)
+			return std::numeric_limits<Uint32>::infinity();
+
+		ENetAddress ip = { 0 };
+		ENetEvent event = {};
+
+		enet_address_set_host_new(&ip, address.ToString().c_str());
+		ip.port = port;
+
+		ENetPeer* peer = enet_host_connect(host, &ip, 2, 1);
+
+		if (peer == NULL)
+			return std::numeric_limits<Uint32>::infinity();
+
+		if (enet_host_service(host, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
+
+			Uint32 start = enet_time_get();
+			Uint32 end = 0;
+			Packet p;
+			p << ' ';
+			ENetPacket* packet = enet_packet_create(p.GetData(), p.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
+			enet_peer_send(peer, 1, packet);
+			if (enet_host_service(host, &event, 3000) > 0) {
+
+				if (event.type == ENET_EVENT_TYPE_RECEIVE) {
+
+					end = enet_time_get();
+					enet_packet_destroy(event.packet);
+					enet_peer_disconnect(peer, 1);
+					enet_host_destroy(host);
+				}
+			}
+
+			else
+				return std::numeric_limits<Uint32>::infinity();
+
+			return end - start;
+		}
+
+		else {
+
+			enet_peer_reset(peer);
+			enet_host_destroy(host);
+		}
+
+		return std::numeric_limits<Uint32>::infinity();
+	}
+
+	void Socket::Flush() {
+
+		if (m_Data->Host != NULL)
+			enet_host_flush(m_Data->Host);
+		else
+			enet_host_flush(m_Data->ServerHost);
+	}
+
+	void Socket::Disconnect() {
 
 		if (m_Data->Host != NULL) {
 
@@ -155,20 +213,49 @@ namespace fm {
 				std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 				m_Data->Connected = false;
-				m_Data->Status = Status::Disconnected;
-				m_Data->ReceiveNotifier.notify_all();
 			}
 
 			if (m_Thread->joinable())
 				m_Thread->join();
-		}
-
-		else {
 
 			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-			m_Data->Connected = false;
 			enet_peer_disconnect(m_Data->Peer, 0);
+
+			ENetEvent event = {};
+			bool disconnected = false;
+			while (enet_host_service(m_Data->Host, &event, 100) > 0) {
+
+				switch (event.type) {
+
+					case ENET_EVENT_TYPE_RECEIVE:
+						enet_packet_destroy(event.packet);
+						break;
+
+					case ENET_EVENT_TYPE_DISCONNECT:
+						disconnected = true;
+						break;
+				}
+			}
+
+			if (!disconnected)
+				enet_peer_reset(m_Data->Peer);
+
+			enet_host_destroy(m_Data->Host);
+
+			m_Data->Peer = NULL;
+			m_Data->Host = NULL;
+
+			m_Data->Connected = false;
+			m_Data->Status = Status::Disconnected;
+			m_Data->ReceiveNotifier.notify_all();
+		}
+
+		else if (IsConnected()) {
+
+			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
+			enet_peer_disconnect_later(m_Data->Peer, 0);
 		}
 	}
 
@@ -216,7 +303,7 @@ namespace fm {
 		while (IsConnected()) {
 
 			ENetEvent event = {};
-			while (enet_host_service(m_Data->Host, &event, 10) > 0) {
+			while (enet_host_service(m_Data->Host, &event, 1) > 0) {
 
 				switch (event.type) {
 
@@ -249,42 +336,15 @@ namespace fm {
 				}
 			}
 		}
-
-		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-
-		enet_peer_disconnect(m_Data->Peer, 0);
-
-		ENetEvent event = {};
-		bool disconnected = false;
-		while (enet_host_service(m_Data->Host, &event, 100) > 0) {
-
-			switch (event.type) {
-
-				case ENET_EVENT_TYPE_RECEIVE:
-					enet_packet_destroy(event.packet);
-					break;
-
-				case ENET_EVENT_TYPE_DISCONNECT:
-					disconnected = true;
-					break;
-			}
-		}
-
-		if (!disconnected)
-			enet_peer_reset(m_Data->Peer);
-
-		enet_host_destroy(m_Data->Host);
-
-		m_Data->Peer = NULL;
-		m_Data->Host = NULL;
 	}
 
-	void Socket::Create(IpAddress address, Uint16 port, void* peer) {
+	void Socket::Create(IpAddress address, Uint16 port, void* host, void* peer) {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-		m_Data->Host = NULL;
 		m_Data->Connected = true;
+		m_Data->Host = NULL;
+		m_Data->ServerHost = (ENetHost*)host;
 		m_Data->Peer = (ENetPeer*)peer;
 		m_Data->RemoteAddress = address;
 		m_Data->RemotePort = port;
@@ -307,6 +367,7 @@ namespace fm {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
+		//enet_peer_reset(m_Data->Peer);
 		m_Data->Peer = NULL;
 		m_Data->Status = status;
 		if (m_Data->Connected) {

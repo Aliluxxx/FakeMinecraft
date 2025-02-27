@@ -33,6 +33,8 @@ namespace fm {
 		bool IsConnected() const;
 		Status Send(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = 0);
 		Status Receive(Packet* packet);
+		Uint32 Ping(IpAddress address, Uint16 port);
+		void Flush();
 		void Disconnect();
 		IpAddress GetRemoteAddress() const;
 		Uint16 GetRemotePort() const;
@@ -45,7 +47,7 @@ namespace fm {
 		static std::atomic<Uint32> s_ENetInstances;
 
 		void PollEvents();
-		void Create(IpAddress address, Uint16 port, void* peer);
+		void Create(IpAddress address, Uint16 port, void* host, void* peer);
 		void SetReceivedData(void* packet, std::size_t size);
 		void Destroy(Socket::Status status);
 

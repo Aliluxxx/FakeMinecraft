@@ -22,6 +22,7 @@ namespace fm {
 		void Unbind();
 		bool IsBound() const;
 		Socket::Status Accept(Socket* socket);
+		Socket::Status Broadcast(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = 0);
 
 	private:
 

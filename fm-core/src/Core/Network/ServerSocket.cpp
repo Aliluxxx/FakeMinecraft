@@ -108,10 +108,21 @@ namespace fm {
 		const Uint16& port = m_Data->NewPeerPtr->address.port;
 
 		socket->Disconnect();
-		socket->Create(address, port, m_Data->NewPeerPtr);
+		socket->Create(address, port, m_Data->Host, m_Data->NewPeerPtr);
 		m_Data->Sockets[m_Data->NewPeerPtr->incomingPeerID] = socket;
 		m_Data->NewPeerPtr = NULL;
 		m_Data->NewConnection = false;
+
+		return Socket::Status::Done;
+	}
+
+	Socket::Status ServerSocket::Broadcast(const Packet& packet, PacketFlags_ flags, Uint32 channel) {
+
+			if (!IsBound())
+				return m_Data->Status;
+
+		ENetPacket* p = enet_packet_create(packet.GetData(), packet.GetDataSize(), flags);
+		enet_host_broadcast(m_Data->Host, channel, p);
 
 		return Socket::Status::Done;
 	}
@@ -122,7 +133,7 @@ namespace fm {
 
 			ENetEvent event = {};
 			int status;
-			while (status = enet_host_service(m_Data->Host, &event, 2000) > 0) {
+			while (status = enet_host_service(m_Data->Host, &event, 10) > 0) {
 
 				switch (event.type) {
 
@@ -130,11 +141,15 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						m_Data->Sockets.emplace((Uint32)event.peer->incomingPeerID, nullptr);
-						m_Data->NewPeerPtr = event.peer;
-						m_Data->NewConnection = true;
-						m_Data->Status = Socket::Status::Done;
-						m_Data->AcceptNotifier.notify_all();
+						if (event.peer->eventData != 1) {
+
+							m_Data->Sockets.emplace((Uint32)event.peer->incomingPeerID, nullptr);
+							m_Data->NewPeerPtr = event.peer;
+							m_Data->NewConnection = true;
+							m_Data->Status = Socket::Status::Done;
+							m_Data->AcceptNotifier.notify_all();
+						}
+
 						break;
 					}
 
@@ -142,8 +157,19 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
-						socket.SetReceivedData(event.packet, event.packet->dataLength);
+						if (event.channelID != 1) {
+
+							Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
+							socket.SetReceivedData(event.packet, event.packet->dataLength);
+						}
+
+						else {
+
+							enet_peer_send(event.peer, 1, event.packet);
+							enet_host_flush(m_Data->Host);
+							enet_packet_destroy(event.packet);
+						}
+
 						break;
 					}
 
@@ -151,9 +177,16 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
-						socket.Destroy(Socket::Status::Disconnected);
-						m_Data->Sockets.erase(event.peer->incomingPeerID);
+						if (event.peer->eventData != 1) {
+
+							if (m_Data->Sockets.contains(event.peer->incomingPeerID)) {
+
+								Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
+								socket.Destroy(Socket::Status::Disconnected);
+								m_Data->Sockets.erase(event.peer->incomingPeerID);
+							}
+						}
+
 						break;
 					}
 
@@ -161,9 +194,16 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
-						socket.Destroy(Socket::Status::Timeout);
-						m_Data->Sockets.erase(event.peer->incomingPeerID);
+						if (event.peer->eventData != 1) {
+
+							if (m_Data->Sockets.contains(event.peer->incomingPeerID)) {
+
+								Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
+								socket.Destroy(Socket::Status::Timeout);
+								m_Data->Sockets.erase(event.peer->incomingPeerID);
+							}
+						}
+
 						break;
 					}
 
