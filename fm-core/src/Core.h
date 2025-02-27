@@ -39,3 +39,9 @@
 #include "Core/Base/KeyCodes.h"
 #include "Core/Base/MouseCodes.h"
 #include "Core/Base/GamepadCodes.h"
+
+// Network
+#include "Core/Network/Packet.h"
+#include "Core/Network/IpAddress.h"
+#include "Core/Network/Socket.h"
+#include "Core/Network/ServerSocket.h"

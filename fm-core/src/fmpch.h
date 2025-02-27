@@ -28,6 +28,7 @@
 #include <future>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <cassert>
 #include <cstdio>
 #include <cstdint>
@@ -38,5 +39,6 @@
 #include <inttypes.h>
 
 #ifdef FM_PLATFORM_WINDOWS
+#define _WINSOCKAPI_
 #include <Windows.h>
 #endif
