@@ -6,8 +6,8 @@ class ClientSkeleton {
 
 public:
 
-	ClientSkeleton(fm::Ref<fm::Socket> socket)
-		: m_Socket(socket), m_Thread(&ClientSkeleton::Receive, this)
+	ClientSkeleton(fm::ServerSocket* server, fm::Ref<fm::Socket> socket)
+		: m_Server(server), m_Socket(socket), m_Thread(&ClientSkeleton::Receive, this)
 
 	{
 
@@ -16,7 +16,8 @@ public:
 
 	~ClientSkeleton() {
 
-		m_Thread.join();
+		if (m_Thread.joinable())
+			m_Thread.join();
 	}
 
 private:
@@ -44,13 +45,14 @@ private:
 							packet.Clear();
 							packet << "You have been banned";
 							status = m_Socket->Send(packet, fm::PacketFlags::Reliable);
-							fm::Sleep(fm::Milliseconds(10));
+							m_Socket->Flush();
 							m_Socket->Disconnect();
 							packet.Clear();
 						}
 
 						else {
 
+							m_Server->Broadcast(packet, fm::PacketFlags::Reliable);
 							FM_INFO("[{0}:{1}]: {2}", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort(), s);
 						}
 					}
@@ -69,6 +71,7 @@ private:
 		}
 	}
 
+	fm::ServerSocket* m_Server;
 	fm::Ref<fm::Socket> m_Socket;
 	std::thread m_Thread;
 };
@@ -102,7 +105,7 @@ void ServerLayer::OnUpdate(fm::Time ts) {
 
 		case fm::Socket::Status::Done: {
 
-			fm::Ref<ClientSkeleton> client = fm::CreateRef<ClientSkeleton>(socket);
+			fm::Ref<ClientSkeleton> client = fm::CreateRef<ClientSkeleton>(&m_ServerSocket, socket);
 			clients.push_back(client);
 			break;
 		}
