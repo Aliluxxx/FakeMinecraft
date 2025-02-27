@@ -61,11 +61,17 @@ namespace fm {
 			int bytesReceived = recv(sock, buf, 4096, 0);
 			if (bytesReceived > 0) {
 
+				closesocket(sock);
+				WSACleanup();
+
 				// Echo response to console
 				std::string response = std::string(buf, 0, bytesReceived);
 				return IpAddress(response.substr(response.rfind("\r\n") + 2));
 			}
 		}
+
+		closesocket(sock);
+		WSACleanup();
 
 		return IpAddress::Invalid;
 	}
