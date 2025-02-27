@@ -15,6 +15,8 @@ namespace fm {
 		static const IpAddress Invalid;
 		static const IpAddress Localhost;
 
+		static IpAddress GetPublicAddress();
+
 		IpAddress(const std::string& address);
 		IpAddress(Uint32 address);
 		IpAddress(const IpAddress& other);

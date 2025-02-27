@@ -10,6 +10,66 @@ namespace fm {
 	const fm::IpAddress fm::IpAddress::Invalid(-1);
 	const fm::IpAddress fm::IpAddress::Localhost("127.0.0.1");
 
+	IpAddress IpAddress::GetPublicAddress() {
+
+		std::string ipAddress = "78.47.82.133";			// IP Address of the server
+		int port = 80;									// Listening port # on the server
+
+		// Initialize WinSock
+		WSAData data;
+		WORD ver = MAKEWORD(2, 2);
+		int wsResult = WSAStartup(ver, &data);
+		if (wsResult != 0) {
+
+			return IpAddress::Invalid;
+		}
+
+		// Create socket
+		SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+		if (sock == INVALID_SOCKET) {
+
+			WSACleanup();
+			return IpAddress::Invalid;
+		}
+
+		// Fill in a hint structure
+		sockaddr_in hint;
+		hint.sin_family = AF_INET;
+		hint.sin_port = htons(port);
+		inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
+
+		// Connect to server
+		int connResult = connect(sock, (sockaddr*)&hint, sizeof(hint));
+		if (connResult == SOCKET_ERROR) {
+
+			closesocket(sock);
+			WSACleanup();
+			return IpAddress::Invalid;
+		}
+
+		std::string request =
+			"GET /ip-provider.php HTTP/1.1\r\n"
+			"Host: www.sfml-dev.org\r\n"
+			"Connection: close\r\n\r\n";
+
+		char buf[4096];
+		int sendResult = send(sock, request.c_str(), (int)request.size() + 1, 0);
+		if (sendResult != SOCKET_ERROR) {
+
+			// Wait for response
+			ZeroMemory(buf, 4096);
+			int bytesReceived = recv(sock, buf, 4096, 0);
+			if (bytesReceived > 0) {
+
+				// Echo response to console
+				std::string response = std::string(buf, 0, bytesReceived);
+				return IpAddress(response.substr(response.rfind("\r\n") + 2));
+			}
+		}
+
+		return IpAddress::Invalid;
+	}
+
 	IpAddress::IpAddress(const std::string& address)
 		: m_Address(0)
 
