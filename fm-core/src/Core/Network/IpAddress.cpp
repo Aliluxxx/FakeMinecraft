@@ -12,6 +12,8 @@ namespace fm {
 
 	IpAddress IpAddress::GetPublicAddress() {
 
+#ifdef FM_PLATFORM_WINDOWS
+
 		std::string ipAddress = "78.47.82.133";			// IP Address of the server
 		int port = 80;									// Listening port # on the server
 
@@ -72,6 +74,8 @@ namespace fm {
 
 		closesocket(sock);
 		WSACleanup();
+
+#endif
 
 		return IpAddress::Invalid;
 	}
