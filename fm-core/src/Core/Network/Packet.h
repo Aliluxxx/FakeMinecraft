@@ -37,6 +37,7 @@ namespace fm {
 		std::size_t GetReadPosition() const;
 
 		Packet& operator=(const Packet& other);
+		Packet& operator=(Packet&& other) noexcept;
 		explicit operator bool() const;
 		Packet& operator>>(bool& data);
 		Packet& operator>>(Int8& data);
@@ -68,8 +69,10 @@ namespace fm {
 	private:
 
 		bool CheckSize(std::size_t size);
+		void Resize(std::size_t size);
 
-		std::vector<Uint8> m_Data;
+		Uint8* m_Data;
+		std::size_t m_Size;
 		std::size_t m_ReadPos;
 		bool m_IsValid;
 

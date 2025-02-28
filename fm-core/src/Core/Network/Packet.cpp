@@ -8,19 +8,26 @@
 namespace fm {
 
 	Packet::Packet(const Packet& other)
-		: m_Data(other.m_Data), m_ReadPos(other.m_ReadPos), m_IsValid(other.m_IsValid)
-
-	{}
-	Packet::Packet(Packet&& other) noexcept
-		: m_Data(other.m_Data), m_ReadPos(other.m_ReadPos), m_IsValid(other.m_IsValid)
+		: m_Data(nullptr), m_Size(other.m_Size), m_ReadPos(other.m_ReadPos), m_IsValid(other.m_IsValid)
 
 	{
 
-		other.Clear();
+		Append(other.m_Data, other.m_Size);
+	}
+
+	Packet::Packet(Packet&& other) noexcept
+		: m_Data(other.m_Data), m_Size(other.m_Size), m_ReadPos(other.m_ReadPos), m_IsValid(other.m_IsValid)
+
+	{
+
+		other.m_Data = nullptr;
+		other.m_Size = 0;
+		other.m_ReadPos = 0;
+		other.m_IsValid = true;
 	}
 
 	Packet::Packet()
-		: m_Data({}), m_ReadPos(0), m_IsValid(true)
+		: m_Data(nullptr), m_Size(0), m_ReadPos(0), m_IsValid(true)
 
 	{}
 
@@ -33,32 +40,35 @@ namespace fm {
 
 		if (data && (size_in_bytes > 0)) {
 
-			std::size_t start = m_Data.size();
-			m_Data.resize(start + size_in_bytes);
+			std::size_t start = m_Size;
+			Resize(start + size_in_bytes);
 			std::memcpy(&m_Data[start], data, size_in_bytes);
 		}
 	}
 
 	void Packet::Clear() {
 
-		m_Data.clear();
+		if (m_Data != nullptr)
+			delete[] m_Data;
+		m_Data = nullptr;
+		m_Size = 0;
 		m_ReadPos = 0;
 		m_IsValid = true;
 	}
 
 	const void* Packet::GetData() const {
 
-		return !m_Data.empty() ? m_Data.data() : nullptr;;
+		return m_Data;
 	}
 
 	std::size_t Packet::GetDataSize() const {
 
-		return m_Data.size();
+		return m_Size;
 	}
 
 	bool Packet::EndOfPacket() const {
 
-		return m_ReadPos >= m_Data.size();
+		return m_ReadPos >= m_Size;
 	}
 
 	std::size_t Packet::GetReadPosition() const {
@@ -69,8 +79,30 @@ namespace fm {
 	Packet& Packet::operator=(const Packet& other) {
 
 		m_Data = other.m_Data;
+		m_Size = other.m_Size;
 		m_ReadPos = other.m_ReadPos;
 		m_IsValid = other.m_IsValid;
+
+		return *this;
+	}
+
+	Packet& Packet::operator=(Packet&& other) noexcept {
+
+		if (this != &other) {
+
+			if (m_Data != nullptr)
+				delete[] m_Data;
+
+			m_Data = other.m_Data;
+			m_Size = other.m_Size;
+			m_ReadPos = other.m_ReadPos;
+			m_IsValid = other.m_IsValid;
+
+			other.m_Data = nullptr;
+			other.m_Size = 0;
+			other.m_ReadPos = 0;
+			other.m_IsValid = true;
+		}
 
 		return *this;
 	}
@@ -375,8 +407,16 @@ namespace fm {
 
 	bool Packet::CheckSize(std::size_t size) {
 
-		m_IsValid = m_IsValid && (m_ReadPos + size <= m_Data.size());
+		m_IsValid = m_IsValid && (m_ReadPos + size <= m_Size);
 
 		return m_IsValid;
+	}
+
+	void Packet::Resize(std::size_t size) {
+
+		Uint8* tmpData = m_Data;
+		m_Data = new Uint8[size];
+		memcpy_s(m_Data, size, tmpData, m_Size);
+		m_Size = size;
 	}
 }

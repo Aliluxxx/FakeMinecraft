@@ -134,8 +134,8 @@ namespace fm {
 				return m_Data->Status;
 		}
 
-		*packet = m_Data->ReceivedPacket;
-		m_Data->ReceivedPacket.Clear();
+		*packet = std::move(m_Data->ReceivedPacket);
+		//m_Data->ReceivedPacket.Clear();
 
 		return Status::Done;
 	}
@@ -355,8 +355,6 @@ namespace fm {
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 		m_Data->ReceivedPacket.Append(((ENetPacket*)packet)->data, ((ENetPacket*)packet)->dataLength);
-		//memcpy_s(m_Data->ReceivedPacket.m_Data.data(), size, ((ENetPacket*)packet)->data, size);
-		//memmove_s(m_Data->ReceivedPacket.m_Data.data(), size, ((ENetPacket*)packet)->data, size);
 		enet_packet_destroy(((ENetPacket*)packet));
 
 		m_Data->Status = Socket::Status::Done;
@@ -367,7 +365,6 @@ namespace fm {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-		//enet_peer_reset(m_Data->Peer);
 		m_Data->Peer = NULL;
 		m_Data->Status = status;
 		if (m_Data->Connected) {
