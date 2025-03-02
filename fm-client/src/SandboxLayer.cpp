@@ -3,7 +3,7 @@
 
 #include "SandboxLayer.h"
 
-static fm::IpAddress g_Address = fm::IpAddress::Localhost;//fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");
+static fm::IpAddress g_Address = fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");
 static fm::Scope<std::thread> g_Thread;
 
 static void Receive(fm::Socket* socket) {
@@ -98,7 +98,7 @@ void SandboxLayer::OnUpdate(fm::Time ts) {
 
 	else if (in.compare("/ping") == 0) {
 
-		fm::Uint32 ping = m_Socket.Ping(g_Address, 25565);
+		fm::Uint32 ping = m_Socket.Ping(g_Address, 25565).AsMilliseconds();
 		FM_INFO("{}ms", ping);
 	}
 

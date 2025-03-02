@@ -52,8 +52,8 @@ private:
 
 						else {
 
-							m_Server->Broadcast(packet, fm::PacketFlags::Reliable);
 							FM_INFO("[{0}:{1}]: {2}", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort(), s);
+							m_Server->Broadcast(packet, fm::PacketFlags::Reliable);
 						}
 					}
 
@@ -107,6 +107,7 @@ void ServerLayer::OnUpdate(fm::Time ts) {
 
 			fm::Ref<ClientSkeleton> client = fm::CreateRef<ClientSkeleton>(&m_ServerSocket, socket);
 			clients.push_back(client);
+			FM_INFO("Ping: {}ms", socket->Ping(socket->GetRemoteAddress(), socket->GetRemotePort()).AsMilliseconds());
 			break;
 		}
 
