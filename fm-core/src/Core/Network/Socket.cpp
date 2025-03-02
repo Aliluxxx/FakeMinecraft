@@ -24,13 +24,13 @@ namespace fm {
 		Uint32 PingEndTime = 0;
 	};
 
-	Socket::Socket(IpAddress address, Uint16 port, Uint32 channels_count)
+	Socket::Socket(IpAddress address, Uint16 port, Time timeout, Uint32 channels_count)
 		: m_Mutex(), m_Thread(), m_Data(CreateScope<SocketData>())
 
 	{
 
 		Socket::Init();
-		Connect(address, port);
+		Connect(address, port, timeout, channels_count);
 	}
 
 	Socket::Socket()
@@ -47,7 +47,7 @@ namespace fm {
 		Socket::Shutdown();
 	}
 
-	Socket::Status Socket::Connect(IpAddress address, Uint16 port, Uint32 channels_count) {
+	Socket::Status Socket::Connect(IpAddress address, Uint16 port, Time timeout, Uint32 channels_count) {
 
 		if (IsConnected())
 			Disconnect();
@@ -70,7 +70,7 @@ namespace fm {
 		ip.port = port;
 
 		m_Data->Peer = enet_host_connect(m_Data->Host, &ip, MINIMUM_CHANNEL_COUNT, 0);
-		if (enet_host_service(m_Data->Host, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
+		if (enet_host_service(m_Data->Host, &event, timeout.AsMilliseconds()) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 
 			char buf[2048];
 			enet_address_get_host_ip_new(&event.peer->address, buf, sizeof(buf) / sizeof(char));
