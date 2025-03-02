@@ -32,12 +32,12 @@ namespace fm {
 			Timeout
 		};
 
-		Socket(IpAddress address, Uint16 port);
+		Socket(IpAddress address, Uint16 port, Uint32 channels_count = MINIMUM_CHANNEL_COUNT);
 		Socket(const Socket& other) = delete;
 		Socket();
 		virtual ~Socket();
 
-		Status Connect(IpAddress address, Uint16 port);
+		Status Connect(IpAddress address, Uint16 port, Uint32 channels_count = MINIMUM_CHANNEL_COUNT);
 		bool IsConnected() const;
 		Status Send(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = PAYLOAD_CHANNEL);
 		Status Receive(Packet* packet);
@@ -63,9 +63,6 @@ namespace fm {
 		mutable std::recursive_mutex m_Mutex;
 		Scope<std::thread> m_Thread;
 		Scope<SocketData> m_Data;
-		std::condition_variable_any m_SignalPing;
-		bool m_Signaled = false;
-		Uint32 m_EndTime = 0;
 
 		friend ServerSocket;
 	};

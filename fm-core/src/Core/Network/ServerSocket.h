@@ -14,11 +14,11 @@ namespace fm {
 
 	public:
 
-		ServerSocket(Uint16 port);
+		ServerSocket(Uint16 port, Uint32 clients_count = 16, Uint32 channels_count = MINIMUM_CHANNEL_COUNT);
 		ServerSocket();
 		virtual ~ServerSocket();
 
-		Socket::Status Bind(Uint16 port);
+		Socket::Status Bind(Uint16 port, Uint32 clients_count = 16, Uint32 channels_count = MINIMUM_CHANNEL_COUNT);
 		void Unbind();
 		bool IsBound() const;
 		Socket::Status Accept(Socket* socket);

@@ -17,13 +17,13 @@ namespace fm {
 		Socket::Status Status = Socket::Status::Done;
 	};
 
-	ServerSocket::ServerSocket(Uint16 port)
+	ServerSocket::ServerSocket(Uint16 port, Uint32 clients_count, Uint32 channels_count)
 		: m_Mutex(), m_Thread(), m_Data(CreateScope<ServerSocketData>())
 
 	{
 
 		Socket::Init();
-		Bind(port);
+		Bind(port, clients_count, channels_count);
 	}
 
 	ServerSocket::ServerSocket()
@@ -40,7 +40,7 @@ namespace fm {
 		Socket::Shutdown();
 	}
 
-	Socket::Status ServerSocket::Bind(Uint16 port) {
+	Socket::Status ServerSocket::Bind(Uint16 port, Uint32 clients_count, Uint32 channels_count) {
 
 		if (IsBound())
 			Unbind();
@@ -50,7 +50,7 @@ namespace fm {
 		ENetAddress address = { 0 };
 		address.host = ENET_HOST_ANY;
 		address.port = port;
-		m_Data->Host = enet_host_create(&address, 32, MINIMUM_CHANNEL_COUNT, 0, 0);
+		m_Data->Host = enet_host_create(&address, clients_count, channels_count < MINIMUM_CHANNEL_COUNT ? MINIMUM_CHANNEL_COUNT : channels_count, 0, 0);
 		m_Data->Bound = m_Data->Host != NULL;
 		m_Thread = CreateScope<std::thread>(&ServerSocket::PollEvents, this);
 

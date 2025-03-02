@@ -19,9 +19,12 @@ namespace fm {
 		std::condition_variable_any ReceiveNotifier;
 		Packet ReceivedPacket;
 		Socket::Status Status = Socket::Status::NotReady;
+		std::condition_variable_any PingNotifier;
+		bool WasPinged = false;
+		Uint32 PingEndTime = 0;
 	};
 
-	Socket::Socket(IpAddress address, Uint16 port)
+	Socket::Socket(IpAddress address, Uint16 port, Uint32 channels_count)
 		: m_Mutex(), m_Thread(), m_Data(CreateScope<SocketData>())
 
 	{
@@ -44,7 +47,7 @@ namespace fm {
 		Socket::Shutdown();
 	}
 
-	Socket::Status Socket::Connect(IpAddress address, Uint16 port) {
+	Socket::Status Socket::Connect(IpAddress address, Uint16 port, Uint32 channels_count) {
 
 		if (IsConnected())
 			Disconnect();
@@ -53,7 +56,7 @@ namespace fm {
 
 		m_Data->Host = enet_host_create(NULL /* create a client host */,
 			1 /* only allow 1 outgoing connection */,
-			2 /* allow up 2 channels to be used, 0 and 1 */,
+			channels_count < MINIMUM_CHANNEL_COUNT ? MINIMUM_CHANNEL_COUNT : channels_count /* allow up 2 channels to be used, 0 and 1 */,
 			0 /* assume any amount of incoming bandwidth */,
 			0 /* assume any amount of outgoing bandwidth */);
 
@@ -207,13 +210,13 @@ namespace fm {
 
 				Packet p;
 				p << CLIENT_PING;
-				m_Signaled = false;
+				m_Data->WasPinged = false;
 				Send(p, PacketFlags::Reliable, CONTROL_CHANNEL);
 				Uint32 start = enet_time_get();
-				m_SignalPing.wait_for(lock, std::chrono::milliseconds(5000));
+				m_Data->PingNotifier.wait_for(lock, std::chrono::milliseconds(5000));
 
-				if (m_Signaled)
-					return fm::Milliseconds(Int32(m_EndTime - start));
+				if (m_Data->WasPinged)
+					return fm::Milliseconds(Int32(m_Data->PingEndTime - start));
 
 				else
 					return Time::Infinity;
@@ -224,13 +227,13 @@ namespace fm {
 
 				Packet p;
 				p << SERVER_PING;
-				m_Signaled = false;
+				m_Data->WasPinged = false;
 				Send(p, PacketFlags::Reliable, CONTROL_CHANNEL);
 				Uint32 start = enet_time_get();
-				m_SignalPing.wait_for(lock, std::chrono::milliseconds(5000));
+				m_Data->PingNotifier.wait_for(lock, std::chrono::milliseconds(5000));
 
-				if (m_Signaled)
-					return fm::Milliseconds(Int32(m_EndTime - start));
+				if (m_Data->WasPinged)
+					return fm::Milliseconds(Int32(m_Data->PingEndTime - start));
 
 				else
 					return Time::Infinity;
@@ -433,9 +436,9 @@ namespace fm {
 	void Socket::SignalPing() {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-		m_Signaled = true;
-		m_EndTime = enet_time_get();
-		m_SignalPing.notify_all();
+		m_Data->WasPinged = true;
+		m_Data->PingEndTime = enet_time_get();
+		m_Data->PingNotifier.notify_all();
 	}
 
 	void Socket::Destroy(Socket::Status status) {
