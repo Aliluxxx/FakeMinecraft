@@ -66,7 +66,7 @@ namespace fm {
 		int a = enet_address_set_host_new(&ip, address.ToString().c_str());
 		ip.port = port;
 
-		m_Data->Peer = enet_host_connect(m_Data->Host, &ip, 2, 0);
+		m_Data->Peer = enet_host_connect(m_Data->Host, &ip, MINIMUM_CHANNEL_COUNT, 0);
 		if (enet_host_service(m_Data->Host, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 
 			char buf[2048];
@@ -135,65 +135,109 @@ namespace fm {
 		}
 
 		*packet = std::move(m_Data->ReceivedPacket);
-		//m_Data->ReceivedPacket.Clear();
 
 		return Status::Done;
 	}
 
-	Uint32 Socket::Ping(IpAddress address, Uint16 port) {
+	Time Socket::Ping(IpAddress address, Uint16 port) {
 
-		ENetHost* host = enet_host_create(NULL /* create a client host */,
-			1 /* only allow 1 outgoing connection */,
-			2 /* allow up 2 channels to be used, 0 and 1 */,
-			0 /* assume any amount of incoming bandwidth */,
-			0 /* assume any amount of outgoing bandwidth */);
+		if (!m_Data->Connected || address.ToInteger() != m_Data->RemoteAddress.ToInteger() || port != m_Data->RemotePort) {
 
-		if (host == NULL)
-			return std::numeric_limits<Uint32>::infinity();
+			ENetHost* host = enet_host_create(NULL /* create a client host */,
+				1 /* only allow 1 outgoing connection */,
+				2 /* allow up 2 channels to be used, 0 and 1 */,
+				0 /* assume any amount of incoming bandwidth */,
+				0 /* assume any amount of outgoing bandwidth */);
 
-		ENetAddress ip = { 0 };
-		ENetEvent event = {};
+			if (host == NULL)
+				return Time::Infinity;
 
-		enet_address_set_host_new(&ip, address.ToString().c_str());
-		ip.port = port;
+			ENetAddress ip = { 0 };
+			ENetEvent event = {};
 
-		ENetPeer* peer = enet_host_connect(host, &ip, 2, 1);
+			enet_address_set_host_new(&ip, address.ToString().c_str());
+			ip.port = port;
 
-		if (peer == NULL)
-			return std::numeric_limits<Uint32>::infinity();
+			ENetPeer* peer = enet_host_connect(host, &ip, MINIMUM_CHANNEL_COUNT, PING_REQ);
 
-		if (enet_host_service(host, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
+			if (peer == NULL)
+				return Time::Infinity;
 
-			Uint32 start = enet_time_get();
-			Uint32 end = 0;
-			Packet p;
-			p << ' ';
-			ENetPacket* packet = enet_packet_create(p.GetData(), p.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
-			enet_peer_send(peer, 1, packet);
-			if (enet_host_service(host, &event, 3000) > 0) {
+			if (enet_host_service(host, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 
-				if (event.type == ENET_EVENT_TYPE_RECEIVE) {
+				Uint32 start = enet_time_get();
+				Uint32 end = 0;
+				Packet p;
+				p << CLIENT_PING;
+				ENetPacket* packet = enet_packet_create(p.GetData(), p.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
+				enet_peer_send(peer, CONTROL_CHANNEL, packet);
+				if (enet_host_service(host, &event, 3000) > 0) {
 
-					end = enet_time_get();
-					enet_packet_destroy(event.packet);
-					enet_peer_disconnect(peer, 1);
-					enet_host_destroy(host);
+					if (event.type == ENET_EVENT_TYPE_RECEIVE) {
+
+						end = enet_time_get();
+						enet_packet_destroy(event.packet);
+						enet_peer_disconnect(peer, PING_REQ);
+						enet_host_flush(host);
+						enet_host_destroy(host);
+					}
 				}
+
+				else
+					return Time::Infinity;
+
+				return fm::Milliseconds(Int32(end - start));
 			}
 
-			else
-				return std::numeric_limits<Uint32>::infinity();
+			else {
 
-			return end - start;
+				enet_peer_reset(peer);
+				enet_host_destroy(host);
+			}
+
+			return Time::Infinity;
 		}
 
-		else {
+		else if (m_Data->Connected) {
 
-			enet_peer_reset(peer);
-			enet_host_destroy(host);
+			std::unique_lock<std::recursive_mutex> lock(m_Mutex);
+
+			// Client-Side
+			if (m_Data->Host != NULL) {
+
+				Packet p;
+				p << CLIENT_PING;
+				m_Signaled = false;
+				Send(p, PacketFlags::Reliable, CONTROL_CHANNEL);
+				Uint32 start = enet_time_get();
+				m_SignalPing.wait_for(lock, std::chrono::milliseconds(5000));
+
+				if (m_Signaled)
+					return fm::Milliseconds(Int32(m_EndTime - start));
+
+				else
+					return Time::Infinity;
+			}
+
+			// Server-Side
+			else if (m_Data->ServerHost != NULL) {
+
+				Packet p;
+				p << SERVER_PING;
+				m_Signaled = false;
+				Send(p, PacketFlags::Reliable, CONTROL_CHANNEL);
+				Uint32 start = enet_time_get();
+				m_SignalPing.wait_for(lock, std::chrono::milliseconds(5000));
+
+				if (m_Signaled)
+					return fm::Milliseconds(Int32(m_EndTime - start));
+
+				else
+					return Time::Infinity;
+			}
 		}
 
-		return std::numeric_limits<Uint32>::infinity();
+		return Time::Infinity;
 	}
 
 	void Socket::Flush() {
@@ -309,7 +353,32 @@ namespace fm {
 
 					case ENET_EVENT_TYPE_RECEIVE: {
 
-						SetReceivedData(event.packet, event.packet->dataLength);
+						if (event.channelID != CONTROL_CHANNEL)
+							SetReceivedData(event.packet, event.packet->dataLength);
+
+						else {
+
+							Packet p; p.Append(event.packet->data, event.packet->dataLength);
+							Uint32 controlData = 0;
+							p >> controlData;
+
+							if (controlData == CLIENT_PING) {
+
+								enet_packet_destroy(event.packet);
+								SignalPing();
+							}
+
+							else if (controlData == SERVER_PING) {
+
+								enet_peer_send(event.peer, CONTROL_CHANNEL, event.packet);
+							}
+
+							else {
+
+								enet_packet_destroy(event.packet);
+							}
+						}
+
 						break;
 					}
 
@@ -359,6 +428,14 @@ namespace fm {
 
 		m_Data->Status = Socket::Status::Done;
 		m_Data->ReceiveNotifier.notify_all();
+	}
+
+	void Socket::SignalPing() {
+
+		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+		m_Signaled = true;
+		m_EndTime = enet_time_get();
+		m_SignalPing.notify_all();
 	}
 
 	void Socket::Destroy(Socket::Status status) {

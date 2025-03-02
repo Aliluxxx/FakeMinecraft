@@ -22,13 +22,12 @@ namespace fm {
 		void Unbind();
 		bool IsBound() const;
 		Socket::Status Accept(Socket* socket);
-		Socket::Status Broadcast(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = 0);
+		Socket::Status Broadcast(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = PAYLOAD_CHANNEL);
 
 	private:
 
 		void PollEvents();
 
-		mutable std::mutex m_HostMutex;
 		mutable std::recursive_mutex m_Mutex;
 		Scope<std::thread> m_Thread;
 		Scope<ServerSocketData> m_Data;

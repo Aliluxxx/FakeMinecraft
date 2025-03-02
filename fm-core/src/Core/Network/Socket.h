@@ -4,7 +4,15 @@
 #include <atomic>
 
 #include "Core/Base/Base.h"
+#include "Core/Base/Time.h"
 #include "Core/Network/IpAddress.h"
+
+#define MINIMUM_CHANNEL_COUNT 2u
+#define CONTROL_CHANNEL 0u
+#define PAYLOAD_CHANNEL 1u
+#define CLIENT_PING 1u
+#define SERVER_PING 2u
+#define PING_REQ 1u
 
 namespace fm {
 
@@ -31,9 +39,9 @@ namespace fm {
 
 		Status Connect(IpAddress address, Uint16 port);
 		bool IsConnected() const;
-		Status Send(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = 0);
+		Status Send(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = PAYLOAD_CHANNEL);
 		Status Receive(Packet* packet);
-		Uint32 Ping(IpAddress address, Uint16 port);
+		Time Ping(IpAddress address, Uint16 port);
 		void Flush();
 		void Disconnect();
 		IpAddress GetRemoteAddress() const;
@@ -49,11 +57,15 @@ namespace fm {
 		void PollEvents();
 		void Create(IpAddress address, Uint16 port, void* host, void* peer);
 		void SetReceivedData(void* packet, std::size_t size);
+		void SignalPing();
 		void Destroy(Socket::Status status);
 
 		mutable std::recursive_mutex m_Mutex;
 		Scope<std::thread> m_Thread;
 		Scope<SocketData> m_Data;
+		std::condition_variable_any m_SignalPing;
+		bool m_Signaled = false;
+		Uint32 m_EndTime = 0;
 
 		friend ServerSocket;
 	};

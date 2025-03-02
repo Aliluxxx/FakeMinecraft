@@ -50,7 +50,7 @@ namespace fm {
 		ENetAddress address = { 0 };
 		address.host = ENET_HOST_ANY;
 		address.port = port;
-		m_Data->Host = enet_host_create(&address, 32, 2, 0, 0);
+		m_Data->Host = enet_host_create(&address, 32, MINIMUM_CHANNEL_COUNT, 0, 0);
 		m_Data->Bound = m_Data->Host != NULL;
 		m_Thread = CreateScope<std::thread>(&ServerSocket::PollEvents, this);
 
@@ -141,7 +141,7 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						if (event.peer->eventData != 1) {
+						if (event.peer->eventData != PING_REQ) {
 
 							m_Data->Sockets.emplace((Uint32)event.peer->incomingPeerID, nullptr);
 							m_Data->NewPeerPtr = event.peer;
@@ -157,7 +157,7 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						if (event.channelID != 1) {
+						if (event.channelID != CONTROL_CHANNEL) {
 
 							Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
 							socket.SetReceivedData(event.packet, event.packet->dataLength);
@@ -165,9 +165,29 @@ namespace fm {
 
 						else {
 
-							enet_peer_send(event.peer, 1, event.packet);
-							enet_host_flush(m_Data->Host);
-							enet_packet_destroy(event.packet);
+							Packet p; p.Append(event.packet->data, event.packet->dataLength);
+							Uint32 controlData = 0;
+							p >> controlData;
+
+							if (controlData == CLIENT_PING) {
+
+								enet_peer_send(event.peer, CONTROL_CHANNEL, event.packet);
+							}
+
+							else if (controlData == SERVER_PING) {
+
+								enet_packet_destroy(event.packet);
+								if (m_Data->Sockets.contains(event.peer->incomingPeerID)) {
+
+									Socket& socket = *m_Data->Sockets.at(event.peer->incomingPeerID);
+									socket.SignalPing();
+								}
+							}
+
+							else {
+
+								enet_packet_destroy(event.packet);
+							}
 						}
 
 						break;
@@ -177,7 +197,7 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						if (event.peer->eventData != 1) {
+						if (event.peer->eventData != PING_REQ) {
 
 							if (m_Data->Sockets.contains(event.peer->incomingPeerID)) {
 
@@ -194,7 +214,7 @@ namespace fm {
 
 						std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-						if (event.peer->eventData != 1) {
+						if (event.peer->eventData != PING_REQ) {
 
 							if (m_Data->Sockets.contains(event.peer->incomingPeerID)) {
 
