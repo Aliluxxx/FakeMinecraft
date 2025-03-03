@@ -100,14 +100,16 @@ namespace fm {
 		return m_Data->Connected;
 	}
 
-	Socket::Status Socket::Send(const Packet& packet, PacketFlags_ flags, Uint32 channel) {
+	Socket::Status Socket::Send(Packet& packet, PacketFlags_ flags, Uint32 channel) {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 		if (!IsConnected())
 			return m_Data->Status;
 
-		ENetPacket* p = enet_packet_create(packet.GetData(), packet.GetDataSize(), flags);
+		std::size_t size;
+		const void* data = packet.OnSend(size);
+		ENetPacket* p = enet_packet_create(data, size, flags);
 
 		if (enet_peer_send(m_Data->Peer, channel, p) == 0)
 			return Status::Done;
@@ -138,6 +140,7 @@ namespace fm {
 		}
 
 		*packet = std::move(m_Data->ReceivedPacket);
+		packet->OnReceive();
 
 		return Status::Done;
 	}

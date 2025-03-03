@@ -39,7 +39,7 @@ namespace fm {
 
 		Status Connect(IpAddress address, Uint16 port, Time timeout = Milliseconds(5000), Uint32 channels_count = MINIMUM_CHANNEL_COUNT);
 		bool IsConnected() const;
-		Status Send(const Packet& packet, PacketFlags_ flags = 0, Uint32 channel = PAYLOAD_CHANNEL);
+		Status Send(Packet& packet, PacketFlags_ flags = 0, Uint32 channel = PAYLOAD_CHANNEL);
 		Status Receive(Packet* packet);
 		Time Ping(IpAddress address, Uint16 port);
 		void Flush();

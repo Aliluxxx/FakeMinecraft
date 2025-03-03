@@ -116,12 +116,14 @@ namespace fm {
 		return Socket::Status::Done;
 	}
 
-	Socket::Status ServerSocket::Broadcast(const Packet& packet, PacketFlags_ flags, Uint32 channel) {
+	Socket::Status ServerSocket::Broadcast(Packet& packet, PacketFlags_ flags, Uint32 channel) {
 
-			if (!IsBound())
-				return m_Data->Status;
+		if (!IsBound())
+			return m_Data->Status;
 
-		ENetPacket* p = enet_packet_create(packet.GetData(), packet.GetDataSize(), flags);
+		std::size_t size;
+		const void* data = packet.OnSend(size);
+		ENetPacket* p = enet_packet_create(data, size, flags);
 		enet_host_broadcast(m_Data->Host, channel, p);
 
 		return Socket::Status::Done;

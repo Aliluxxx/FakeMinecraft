@@ -7,6 +7,7 @@
 namespace fm {
 
 	class Socket;
+	class ServerSocket;
 
 	typedef Uint32 PacketFlags_;
 	static const Uint32 MAX_PACKET_SIZE = 33554432;
@@ -66,7 +67,10 @@ namespace fm {
 		Packet& operator<<(const char* data);
 		Packet& operator<<(const std::string& data);
 
-	private:
+	protected:
+
+		virtual const void* OnSend(std::size_t& size_in_bytes);
+		virtual void OnReceive();
 
 		bool CheckSize(std::size_t size);
 		void Resize(std::size_t size);
@@ -77,5 +81,6 @@ namespace fm {
 		bool m_IsValid;
 
 		friend Socket;
+		friend ServerSocket;
 	};
 }

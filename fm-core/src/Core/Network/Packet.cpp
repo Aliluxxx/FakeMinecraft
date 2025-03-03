@@ -405,6 +405,15 @@ namespace fm {
 		return *this;
 	}
 
+	const void* Packet::OnSend(std::size_t& size_in_bytes) {
+
+		size_in_bytes = m_Size;
+
+		return m_Data;
+	}
+
+	void Packet::OnReceive() {}
+
 	bool Packet::CheckSize(std::size_t size) {
 
 		m_IsValid = m_IsValid && (m_ReadPos + size <= m_Size);
