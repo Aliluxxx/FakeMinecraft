@@ -3,7 +3,7 @@
 
 #include "SandboxLayer.h"
 
-static fm::IpAddress g_Address = fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");
+static fm::IpAddress g_Address = fm::IpAddress::Localhost;//fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");
 static fm::Scope<std::thread> g_Thread;
 
 static void Receive(fm::Socket* socket) {
