@@ -135,7 +135,7 @@ namespace fm {
 
 			ENetEvent event = {};
 			int status;
-			while (status = enet_host_service(m_Data->Host, &event, 10) > 0) {
+			while (status = enet_host_service(m_Data->Host, &event, 1) > 0) {
 
 				switch (event.type) {
 
