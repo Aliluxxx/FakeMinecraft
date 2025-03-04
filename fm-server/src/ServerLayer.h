@@ -2,16 +2,16 @@
 
 #include <Core.h>
 
-class SandboxLayer : public fm::Layer {
+class ServerLayer : public fm::Layer {
 
 public:
 
-	SandboxLayer()
+	ServerLayer()
 		: fm::Layer("Sandbox")
 
 	{}
 
-	virtual ~SandboxLayer() = default;
+	virtual ~ServerLayer() = default;
 
 	virtual void OnAttach();
 	virtual void OnDetach();
@@ -21,5 +21,5 @@ public:
 
 private:
 
-	fm::Socket m_Socket;
+	fm::ServerSocket m_ServerSocket;
 };

@@ -3,6 +3,7 @@
 #include "Time.h"
 #ifndef FM_STATIC
 const fm::Time fm::Time::Zero;
+const fm::Time fm::Time::Infinity((fm::Int64)0x80000000);
 #endif
 #include "Sleep.h"
 
