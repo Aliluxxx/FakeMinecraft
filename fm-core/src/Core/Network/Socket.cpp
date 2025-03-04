@@ -171,12 +171,12 @@ namespace fm {
 
 			if (enet_host_service(host, &event, 1000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 
-				Uint32 start = enet_time_get();
-				Uint32 end = 0;
 				Packet p;
 				p << CLIENT_PING;
 				ENetPacket* packet = enet_packet_create(p.GetData(), p.GetDataSize(), ENET_PACKET_FLAG_RELIABLE);
 				enet_peer_send(peer, CONTROL_CHANNEL, packet);
+				Uint32 end = 0;
+				Uint32 start = enet_time_get();
 				if (enet_host_service(host, &event, 3000) > 0) {
 
 					if (event.type == ENET_EVENT_TYPE_RECEIVE) {
@@ -439,8 +439,8 @@ namespace fm {
 	void Socket::SignalPing() {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-		m_Data->WasPinged = true;
 		m_Data->PingEndTime = enet_time_get();
+		m_Data->WasPinged = true;
 		m_Data->PingNotifier.notify_all();
 	}
 
