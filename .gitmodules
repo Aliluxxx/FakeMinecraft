@@ -13,3 +13,6 @@
 [submodule "fm-core/libs/glm"]
 	path = fm-core/libs/glm
 	url = https://github.com/icaven/glm
+[submodule "fm-core/libs/openal"]
+	path = fm-core/libs/openal
+	url = https://github.com/kcat/openal-soft
