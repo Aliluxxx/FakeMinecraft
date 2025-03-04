@@ -23,8 +23,7 @@ includedirs {
 
 defines {
 
-	"FM_ENGINE",
-	"ENET_IMPLEMENTATION"
+	"FM_ENGINE"
 }
 
 -- Windows
