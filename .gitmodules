@@ -16,3 +16,6 @@
 [submodule "fm-core/libs/openal"]
 	path = fm-core/libs/openal
 	url = https://github.com/kcat/openal-soft
+[submodule "fm-core/libs/vorbis"]
+	path = fm-core/libs/vorbis
+	url = https://github.com/xiph/vorbis
