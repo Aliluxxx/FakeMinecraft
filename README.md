@@ -33,7 +33,9 @@ All the project documentation can be found in the `docs` folder
 
 ## External libraries
 - [GLFW](https://github.com/glfw/glfw) for the window handling
-- [ENet](https://github.com/zpl-c/enet) for reliable UDP networking
 - [GLM](https://github.com/icaven/glm) for the math
 - [spdlog](https://github.com/gabime/spdlog) for the logging system
+- [ENet](https://github.com/zpl-c/enet) for reliable UDP networking
+- [OpenAL](https://github.com/kcat/openal-soft) for the sound engine
+- [Ogg](https://github.com/xiph/ogg) and [Vorbis](https://github.com/xiph/vorbis) to read and write on .ogg audio files
 - [Native File Dialog Extended](https://github.com/btzy/nativefiledialog-extended) for the native file dialog (duh)
