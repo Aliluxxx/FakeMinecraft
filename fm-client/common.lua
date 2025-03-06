@@ -29,13 +29,24 @@ filter "system:windows"
 		"_CRT_SECURE_NO_WARNINGS"
 	}
 
+	filter "configurations:*Static"
+
+		links {
+
+			"winmm.lib",
+			"avrt.lib"
+		}
+
 -- Static
 filter "configurations:*Static"
-	defines "FM_STATIC"
+	defines { "FM_STATIC", "AL_LIBTYPE_STATIC" }
 
 	links {
 
-		"nfd"
+		"nfd",
+		"ogg",
+		"openal",
+		"vorbis"
 	}
 
 -- Shared

@@ -18,7 +18,10 @@ includedirs {
 	"%{IncludeDir.enet}",
 	"%{IncludeDir.spdlog}",
 	"%{IncludeDir.nfd}",
-	"%{IncludeDir.glm}"
+	"%{IncludeDir.glm}",
+	"%{IncludeDir.ogg}",
+	"%{IncludeDir.openal}",
+	"%{IncludeDir.vorbis}"
 }
 
 defines {
@@ -34,7 +37,11 @@ filter "system:windows"
 
 		"FM_PLATFORM_WINDOWS",
 		"_CRT_SECURE_NO_WARNINGS",
-		"_WINSOCK_DEPRECATED_NO_WARNINGS"
+		"_WINSOCK_DEPRECATED_NO_WARNINGS",
+		"_WINDOWS",
+		"_WIN32",
+		"WIN32",
+		"NOMINMAX"
 	}
 
 -- Debug
@@ -66,10 +73,17 @@ filter "configurations:*Static"
 -- Shared
 filter "configurations:*DLL or *Shared"
 	kind "SharedLib"
+	defines "AL_LIBTYPE_STATIC"
 
 	links {
 
-		"nfd"
+		"nfd",
+		"ogg",
+		"openal",
+		"vorbis",
+
+		"winmm.lib",
+		"avrt.lib"
 	}
 
 filter "configurations:*DLL"
