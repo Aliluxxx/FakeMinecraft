@@ -139,14 +139,6 @@ namespace fm {
 		return m_Data->Samples;
 	}
 
-	void Microphone::CutSamples(std::vector<Int16>* samples) {
-
-		std::lock_guard<std::recursive_mutex> lock(m_Data->Mutex);
-
-		*samples = m_Data->Samples;
-		m_Data->Samples.clear();
-	}
-
 	const bool& Microphone::IsCapturing() const {
 
 		return m_Data->IsCapturing;
@@ -176,7 +168,8 @@ namespace fm {
 
 			samples.resize(static_cast<std::size_t>(samplesAvailable) * GetChannelCount());
 			alcCaptureSamples(m_Data->alDevice, samples.data(), samplesAvailable);
-			std::copy(samples.data(), samples.data() + samples.size(), std::back_inserter(m_Data->Samples));
+			if (OnProcessSamples(samples.data(), samples.size()))
+				std::copy(samples.data(), samples.data() + samples.size(), std::back_inserter(m_Data->Samples));
 			samples.clear();
 		}
 	}

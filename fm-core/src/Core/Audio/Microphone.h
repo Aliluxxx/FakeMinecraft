@@ -24,8 +24,11 @@ namespace fm {
 		const Uint32& GetChannelCount() const;
 		const Uint32& GetSampleRate() const;
 		const std::vector<Int16>& GetSamples() const;
-		void CutSamples(std::vector<Int16>* samples);
 		const bool& IsCapturing() const;
+
+	protected:
+
+		virtual bool OnProcessSamples(fm::Int16* samples, std::size_t samples_count) { return true; }
 
 	private:
 
