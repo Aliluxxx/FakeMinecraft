@@ -68,6 +68,11 @@ public:
 		//	m_Size += size;
 		//}
 
+		//while (m_DataToRead != 0) {
+
+		//	fm::Sleep(fm::Milliseconds(1));
+		//}
+
 		//FM_INFO("{0} - {1}", size + m_Size, m_Buffer.size());
 		if (size + m_Size > m_Buffer.size()) {
 
@@ -77,6 +82,7 @@ public:
 			//buffer.SaveToFile("resources/save8.ogg");
 			m_Size = size - (m_Buffer.size() - m_Size);
 			//FM_INFO("Size exceeded: {}", m_Size);
+			FM_WARN("Buffer exceeded");
 		}
 
 		else {
@@ -85,11 +91,15 @@ public:
 
 			if (m_Size + size >= MaxSampleCount) {
 
+				//FM_INFO("Available data: {}", size);
+				//std::memcpy(m_Buffer.data() + m_Size, data, (MaxSampleCount - m_Size) * sizeof(fm::Int16));
+
 				//std::memcpy(m_ReadBuffer.data(), m_Buffer.data(), MaxSampleCount * sizeof(fm::Int16));
-				m_DataToRead = MaxSampleCount;
-				m_Size = 0;
+				m_DataToRead = m_Size + size;
+				m_Size = m_DataToRead - MaxSampleCount;
 				m_ReadNotifier.notify_all();
-				std::this_thread::yield();
+				//std::this_thread::yield();
+				//FM_WARN("Shi");
 			}
 
 			else {
@@ -106,8 +116,12 @@ public:
 		while (m_DataToRead == 0)
 			m_ReadNotifier.wait(lock);
 
-		std::memcpy(data, m_Buffer.data(), m_DataToRead * sizeof(fm::Int16));
+		std::memcpy(data, m_Buffer.data(), MaxSampleCount * sizeof(fm::Int16));
+		std::memmove(m_Buffer.data(), m_Buffer.data() + MaxSampleCount, (m_DataToRead - MaxSampleCount) * sizeof(fm::Int16));
+		//FM_INFO("Available samples: {}", m_DataToRead - m_Size);
+		//FM_INFO("ka");
 
+		//m_Size = m_DataToRead - MaxSampleCount;
 		m_DataToRead = 0;
 
 		//if (m_Offset + size > m_Buffer.size()) {
@@ -138,6 +152,7 @@ private:
 	std::size_t m_DataToRead = 0;
 };
 
+fm::Uint64 s_ID;
 class MicrophoneStreamer : public fm::Microphone {
 
 public:
@@ -147,6 +162,7 @@ public:
 
 	{
 
+		s_ID = time(NULL);
 		FM_INFO("Input Device: {}", GetDeviceName());
 		FM_INFO("Output Device: {}", fm::Audio::GetCurrentDevice());
 	}
@@ -154,6 +170,7 @@ public:
 	virtual bool OnProcessSamples(fm::Int16* samples, std::size_t samples_count) override {
 
 		fm::Packet packet;
+		packet << s_ID;
 		packet.Append(samples, samples_count * sizeof(fm::Int16));
 		fm::Socket::Status status = m_Socket->Send(packet, fm::PacketFlags::Unreliable);
 		switch (status) {
@@ -238,6 +255,8 @@ static fm::Scope<VoiceChat> s_VoiceChat;
 
 void Receive(fm::Socket* socket) {
 
+	while (!s_VoiceChat) { fm::Sleep(fm::Milliseconds(1)); }
+
 	static std::size_t s_Counter = 0;
 
 	fm::Socket::Status status = {};
@@ -251,7 +270,14 @@ void Receive(fm::Socket* socket) {
 
 			case fm::Socket::Status::Done: {
 
-				s_VoiceChat->SetSamples((fm::Int16*)packet.GetData(), packet.GetDataSize() / 2);
+				fm::Uint64 id;
+				packet >> id;
+				fm::Uint8* data = (fm::Uint8*)packet.GetData();
+				if (id != s_ID) {
+
+					s_VoiceChat->SetSamples((fm::Int16*)(data + packet.GetReadPosition()), (packet.GetDataSize() - packet.GetReadPosition()) / 2);
+					//FM_INFO("Sample count: {}", (packet.GetDataSize() - packet.GetReadPosition()) / 2);
+				}
 				break;
 			}
 
