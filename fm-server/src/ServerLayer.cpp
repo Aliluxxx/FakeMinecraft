@@ -35,7 +35,8 @@ private:
 
 				case fm::Socket::Status::Done:
 
-					m_Server->Broadcast(packet, fm::PacketFlags::Unreliable);
+					m_Server->Broadcast(packet, fm::PacketFlags::Unreliable | fm::PacketFlags::Unsequenced);
+					packet.Clear();
 
 					//if (packet >> s) {
 
