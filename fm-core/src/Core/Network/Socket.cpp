@@ -8,6 +8,73 @@ namespace fm {
 
 	std::atomic<Uint32> Socket::s_ENetInstances = 0;
 
+	struct Node {
+
+		ENetPacket* Packet = nullptr;
+		Node* Next = nullptr;
+	};
+
+	class PacketQueue {
+
+	public:
+
+		PacketQueue() : m_Head(nullptr), m_Tail(nullptr), m_Length(0) {}
+
+		Node* Front() {
+
+			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
+			return m_Head;
+		}
+
+		void Enqueue(ENetPacket* packet) {
+
+			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
+			if (m_Length == 0) {
+
+				m_Head = new Node();
+				m_Head->Packet = packet;
+				m_Tail = m_Head;
+			}
+
+			else {
+
+				m_Tail->Next = new Node();
+				m_Tail->Next->Packet = packet;
+				m_Tail = m_Tail->Next;
+			}
+
+			m_Length++;
+		}
+
+		void Dequeue() {
+
+			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
+			if (m_Length == 0)
+				return;
+
+			Node* tmp = m_Head->Next;
+			delete m_Head;
+			m_Head = tmp;
+
+			m_Length--;
+		}
+
+		inline const std::size_t& Length() const {
+
+			return m_Length;
+		}
+
+	private:
+
+		Node* m_Head;
+		Node* m_Tail;
+		std::size_t m_Length;
+		std::recursive_mutex m_Mutex;
+	};
+
 	struct SocketData {
 
 		ENetHost* Host = { 0 };
@@ -22,6 +89,7 @@ namespace fm {
 		std::condition_variable_any PingNotifier;
 		bool WasPinged = false;
 		Uint32 PingEndTime = 0;
+		PacketQueue Queue;
 	};
 
 	Socket::Socket(IpAddress address, Uint16 port, Time timeout, Uint32 channels_count)
@@ -132,15 +200,19 @@ namespace fm {
 
 		std::unique_lock<std::recursive_mutex> lock(m_Mutex);
 
-		while (m_Data->ReceivedPacket.GetDataSize() == 0) {
+		while (m_Data->Queue.Length() == 0) {
 
 			m_Data->ReceiveNotifier.wait(lock);
 			if (!IsConnected())
 				return m_Data->Status;
 		}
 
-		*packet = std::move(m_Data->ReceivedPacket);
-		packet->OnReceive();
+		FM_CORE_ASSERT(packet != nullptr, "The packet must not be nullptr");
+
+		Node* node = m_Data->Queue.Front();
+		packet->OnReceive(node->Packet->data, node->Packet->dataLength);
+		enet_packet_destroy(node->Packet);
+		m_Data->Queue.Dequeue();
 
 		return Status::Done;
 	}
@@ -429,9 +501,7 @@ namespace fm {
 
 		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-		m_Data->ReceivedPacket.Append(((ENetPacket*)packet)->data, ((ENetPacket*)packet)->dataLength);
-		enet_packet_destroy(((ENetPacket*)packet));
-
+		m_Data->Queue.Enqueue((ENetPacket*)packet);
 		m_Data->Status = Socket::Status::Done;
 		m_Data->ReceiveNotifier.notify_all();
 	}

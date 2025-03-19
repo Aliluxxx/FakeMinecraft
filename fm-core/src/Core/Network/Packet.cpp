@@ -412,7 +412,10 @@ namespace fm {
 		return m_Data;
 	}
 
-	void Packet::OnReceive() {}
+	void Packet::OnReceive(void* data, std::size_t& size_in_bytes) {
+
+		Append(data, size_in_bytes);
+	}
 
 	bool Packet::CheckSize(std::size_t size) {
 
