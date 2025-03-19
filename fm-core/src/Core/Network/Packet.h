@@ -70,7 +70,7 @@ namespace fm {
 	protected:
 
 		virtual const void* OnSend(std::size_t& size_in_bytes);
-		virtual void OnReceive();
+		virtual void OnReceive(void* data, std::size_t& size_in_bytes);
 
 		bool CheckSize(std::size_t size);
 		void Resize(std::size_t size);
