@@ -30,32 +30,36 @@ private:
 		while (status == fm::Socket::Status::Done) {
 
 			status = m_Socket->Receive(&packet);
+			//FM_INFO("Received: {} bytes", packet.GetDataSize());
 
 			switch (status) {
 
 				case fm::Socket::Status::Done:
 
-					if (packet >> s) {
+					m_Server->Broadcast(packet, fm::PacketFlags::Unreliable | fm::PacketFlags::Unsequenced);
+					packet.Clear();
 
-						if (s.starts_with("nigga") ||
-							s.starts_with("nigger"))
+					//if (packet >> s) {
 
-						{
+					//	if (s.starts_with("nigga") ||
+					//		s.starts_with("nigger"))
 
-							packet.Clear();
-							packet << "You have been banned";
-							status = m_Socket->Send(packet, fm::PacketFlags::Reliable);
-							m_Socket->Flush();
-							m_Socket->Disconnect();
-							packet.Clear();
-						}
+					//	{
 
-						else {
+					//		packet.Clear();
+					//		packet << "You have been banned";
+					//		status = m_Socket->Send(packet, fm::PacketFlags::Reliable);
+					//		m_Socket->Flush();
+					//		m_Socket->Disconnect();
+					//		packet.Clear();
+					//	}
 
-							FM_INFO("[{0}:{1}]: {2}", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort(), s);
-							m_Server->Broadcast(packet, fm::PacketFlags::Reliable);
-						}
-					}
+					//	else {
+
+					//		FM_INFO("[{0}:{1}]: {2}", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort(), s);
+					//		m_Server->Broadcast(packet, fm::PacketFlags::Reliable);
+					//	}
+					//}
 
 					break;
 				case fm::Socket::Status::Disconnected:

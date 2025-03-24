@@ -1,56 +1,25 @@
 #include <iostream>
-#include <thread>
 
 #include "SandboxLayer.h"
 
-static fm::IpAddress g_Address = fm::IpAddress::Localhost;//fm::IpAddress("79.45.129.43");//fm::IpAddress("79.45.129.43");
-static fm::Scope<std::thread> g_Thread;
+static fm::IpAddress s_Address = fm::IpAddress::Localhost;//79.20.156.247 192.168.1.178
 
-static void Receive(fm::Socket* socket) {
+void SandboxLayer::Connect() {
 
-	fm::Socket::Status status = {};
-	do {
-
-		fm::Packet packet;
-
-		status = socket->Receive(&packet);
-
-		switch (status) {
-
-			case fm::Socket::Status::Done: {
-
-				std::string s;
-				if (packet >> s) {
-					FM_INFO("[{0}:{1}]: {2}", socket->GetRemoteAddress().ToString(), socket->GetRemotePort(), s);
-				}
-				break;
-			}
-
-			case fm::Socket::Status::Disconnected:
-				FM_INFO("[{0}:{1}] has disconnected", socket->GetRemoteAddress().ToString(), socket->GetRemotePort());
-				return;
-			case fm::Socket::Status::Timeout:
-				FM_WARN("[{0}:{1}] lost connection", socket->GetRemoteAddress().ToString(), socket->GetRemotePort());
-				return;
-			default:
-				FM_ERROR("[{0}:{1}] error", socket->GetRemoteAddress().ToString(), socket->GetRemotePort());
-				return;
-		}
-
-	} while (status == fm::Socket::Status::Done);
-}
-
-static void Connect(fm::Socket* socket) {
-
-	fm::IpAddress address = g_Address;
+	fm::IpAddress address = s_Address;
 	fm::Uint16 port = 25565;
-	if (socket->Connect(address, port) == fm::Socket::Status::Done) {
+
+	if (m_Socket == nullptr)
+		m_Socket = fm::CreateRef<fm::Socket>();
+
+	if (m_Socket->Connect(address, port, fm::Milliseconds(5000)) == fm::Socket::Status::Done) {
 
 		FM_INFO("Connected to {0}:{1}", address.ToString(), port);
-		if (g_Thread && g_Thread->joinable())
-			g_Thread->join();
+		if (m_ReceiveThread && m_ReceiveThread->joinable())
+			m_ReceiveThread->join();
 
-		g_Thread = fm::CreateScope<std::thread>(&Receive, socket);
+		m_VoiceChat = fm::CreateScope<VoiceChat>(m_Socket);
+		m_ReceiveThread = fm::CreateScope<std::thread>(&SandboxLayer::Receive, this);
 	}
 
 	else {
@@ -59,78 +28,71 @@ static void Connect(fm::Socket* socket) {
 	}
 }
 
+void SandboxLayer::Receive() {
+
+	fm::Socket::Status status = {};
+	do {
+
+		fm::Packet packet;
+
+		status = m_Socket->Receive(&packet);
+
+		switch (status) {
+
+			case fm::Socket::Status::Done: {
+
+				fm::Uint64 id;
+				packet >> id;
+				fm::Uint8* data = (fm::Uint8*)packet.GetData();
+				if (id != m_VoiceChat->GetVoiceChatID()) {
+
+					//FM_INFO("Received: {}", (packet.GetDataSize() - packet.GetReadPosition()) / 2);
+					m_VoiceChat->LoadFromSamples((fm::Int16*)(data + packet.GetReadPosition()), (packet.GetDataSize() - packet.GetReadPosition()) / 2);
+				}
+
+				break;
+			}
+
+			case fm::Socket::Status::Disconnected:
+				FM_INFO("[{0}:{1}] has disconnected", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort());
+				return;
+			case fm::Socket::Status::Timeout:
+				FM_WARN("[{0}:{1}] lost connection", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort());
+				return;
+			default:
+				FM_ERROR("[{0}:{1}] error", m_Socket->GetRemoteAddress().ToString(), m_Socket->GetRemotePort());
+				return;
+		}
+
+	} while (status == fm::Socket::Status::Done);
+}
+
 void SandboxLayer::OnAttach() {
 
 	FM_INFO("Public IP: {}", fm::IpAddress::GetPublicAddress().ToString());
 
-	Connect(&m_Socket);
+	Connect();
 }
 
 void SandboxLayer::OnDetach() {
 
-	m_Socket.Disconnect();
-	if (g_Thread && g_Thread->joinable())
-		g_Thread->join();
+	m_Socket->Disconnect();
+	if (m_ReceiveThread && m_ReceiveThread->joinable())
+		m_ReceiveThread->join();
 }
 
 void SandboxLayer::OnUpdate(fm::Time ts) {
 
+#ifdef FM_HEADLESS
 	std::string in;
 	std::getline(std::cin, in);
-
-	if (in.compare("/close") == 0) {
+	if (in.compare("/exit") == 0) {
 
 		fm::Application::Close();
-		return;
 	}
-
-	else if (in.compare("/connect") == 0) {
-
-		Connect(&m_Socket);
-	}
-
-	else if (in.compare("/disconnect") == 0) {
-
-		m_Socket.Disconnect();
-		if (g_Thread && g_Thread->joinable())
-			g_Thread->join();
-	}
-
-	else if (in.compare("/ping") == 0) {
-
-		fm::Uint32 ping = m_Socket.Ping(g_Address, 25565).AsMilliseconds();
-		FM_INFO("{}ms", ping);
-	}
-
-	else {
-
-		if (m_Socket.IsConnected()) {
-
-			fm::Packet packet;
-			packet << in;
-			fm::Socket::Status status = m_Socket.Send(packet, fm::PacketFlags::Reliable);
-			switch (status) {
-
-				case fm::Socket::Status::Done:
-					break;
-				case fm::Socket::Status::Disconnected:
-					FM_INFO("[{0}:{1}] has disconnected", m_Socket.GetRemoteAddress().ToString(), m_Socket.GetRemotePort());
-					break;
-				case fm::Socket::Status::Timeout:
-					FM_WARN("[{0}:{1}] lost connection", m_Socket.GetRemoteAddress().ToString(), m_Socket.GetRemotePort());
-					break;
-				default:
-					FM_ERROR("[{0}:{1}] error", m_Socket.GetRemoteAddress().ToString(), m_Socket.GetRemotePort());
-					m_Socket.Disconnect();
-					break;
-			}
-		}
-
-		else {
-
-			FM_WARN("Not connected");
-		}
-	}
+#else
+	fm::Sleep(fm::Milliseconds(1));
+#endif
 }
 
 void SandboxLayer::OnImGuiRender() {

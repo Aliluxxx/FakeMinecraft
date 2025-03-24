@@ -2,6 +2,8 @@
 
 #include <Core.h>
 
+#include "VoiceChat.h"
+
 class SandboxLayer : public fm::Layer {
 
 public:
@@ -21,5 +23,10 @@ public:
 
 private:
 
-	fm::Socket m_Socket;
+	void Connect();
+	void Receive();
+
+	fm::Ref<fm::Socket> m_Socket;
+	fm::Scope<VoiceChat> m_VoiceChat;
+	fm::Scope<std::thread> m_ReceiveThread;
 };

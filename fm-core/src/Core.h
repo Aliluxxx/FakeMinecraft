@@ -45,3 +45,14 @@
 #include "Core/Network/IpAddress.h"
 #include "Core/Network/Socket.h"
 #include "Core/Network/ServerSocket.h"
+
+// Audio
+#include "Core/Audio/Audio.h"
+#include "Core/Audio/InputSoundFile.h"
+#include "Core/Audio/Microphone.h"
+#include "Core/Audio/Music.h"
+#include "Core/Audio/OutputSoundFile.h"
+#include "Core/Audio/Sound.h"
+#include "Core/Audio/SoundBuffer.h"
+#include "Core/Audio/SoundSource.h"
+#include "Core/Audio/SoundStream.h"
