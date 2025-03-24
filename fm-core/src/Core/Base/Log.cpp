@@ -12,7 +12,7 @@ namespace fm {
 
 	void Log::Init() {
 
-		s_CoreLogger = spdlog::stdout_color_mt("VULTURE");
+		s_CoreLogger = spdlog::stdout_color_mt("CORE");
 		s_CoreLogger->set_pattern("[%T.%e][%n][%s:%#][%^%l%$]: %v");
 		s_CoreLogger->set_level(spdlog::level::trace);
 
