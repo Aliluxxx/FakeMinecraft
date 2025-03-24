@@ -44,7 +44,7 @@ void SandboxLayer::Receive() {
 				fm::Uint64 id;
 				packet >> id;
 				fm::Uint8* data = (fm::Uint8*)packet.GetData();
-				if (id == m_VoiceChat->GetVoiceChatID()) {
+				if (id != m_VoiceChat->GetVoiceChatID()) {
 
 					//FM_INFO("Received: {}", (packet.GetDataSize() - packet.GetReadPosition()) / 2);
 					m_VoiceChat->LoadFromSamples((fm::Int16*)(data + packet.GetReadPosition()), (packet.GetDataSize() - packet.GetReadPosition()) / 2);

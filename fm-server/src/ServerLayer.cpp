@@ -30,6 +30,7 @@ private:
 		while (status == fm::Socket::Status::Done) {
 
 			status = m_Socket->Receive(&packet);
+			//FM_INFO("Received: {} bytes", packet.GetDataSize());
 
 			switch (status) {
 

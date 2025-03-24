@@ -13,19 +13,17 @@ namespace fm {
 	struct AudioData {
 
 		ALCdevice* alDevice = NULL;
-		ALCcontext* Context = NULL;
+		ALCcontext* alContext = NULL;
 		std::string Device;
 	};
 
-	static Scope<AudioData> s_Data;
+	static Scope<AudioData> s_Data = CreateScope<AudioData>();
 
 	std::atomic<Uint32> Audio::s_ALInstances = 0;
 
 	void Audio::Init() {
 
 		if (s_ALInstances == 0) {
-
-			s_Data = CreateScope<AudioData>();
 
 			if (!GetAvailableDevices().empty())
 				SetNewDevice(GetAvailableDevices().at(0));
@@ -56,8 +54,8 @@ namespace fm {
 		DestroyOpenALContext();
 		s_Data->Device = device;
 		s_Data->alDevice = alcOpenDevice(device.c_str());
-		s_Data->Context = alcCreateContext(s_Data->alDevice, nullptr);
-		alcMakeContextCurrent(s_Data->Context);
+		s_Data->alContext = alcCreateContext(s_Data->alDevice, nullptr);
+		alcMakeContextCurrent(s_Data->alContext);
 	}
 
 	std::vector<std::string> Audio::GetAvailableDevices() {
@@ -96,13 +94,19 @@ namespace fm {
 
 	const std::string& Audio::GetCurrentDevice() {
 
+		if (s_Data->Device.empty()) {
+
+			const auto& devices = GetAvailableDevices();
+			s_Data->Device = devices.empty() ? "" : devices[0];
+		}
+
 		return s_Data->Device;
 	}
 
 	void Audio::DestroyOpenALContext() {
 
-		if (s_Data->Context)
-			alcDestroyContext(s_Data->Context);
+		if (s_Data->alContext)
+			alcDestroyContext(s_Data->alContext);
 	}
 
 	// Listener
@@ -153,11 +157,4 @@ namespace fm {
 		ALfloat vecs[6] = { front.x, front.y, front.z, up.x, up.y, up.z };
 		alListenerfv(AL_ORIENTATION, vecs);
 	}
-
-	// Listener storage
-
-	/*float Audio::Listener::s_Volume = 100.0f;
-	Vector3f Audio::Listener::s_Position(0.0f, 0.0f, 0.0f);
-	Vector3f Audio::Listener::s_Direction(0.0f, 0.0f, -1.0f);
-	Vector3f Audio::Listener::s_VectorUp(0.0f, 1.0f, 0.0f);*/
 }
