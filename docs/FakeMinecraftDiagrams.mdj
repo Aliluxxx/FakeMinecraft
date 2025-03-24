@@ -31522,7 +31522,25 @@
 											"width": 519,
 											"height": 13,
 											"underline": true,
-											"text": "+GetAvailableDevices(): Microphone[]",
+											"text": "+GetAvailableDevices(): String[]",
+											"horizontalAlignment": 0
+										},
+										{
+											"_type": "UMLOperationView",
+											"_id": "AAAAAAGVclbks4YnjmU=",
+											"_parent": {
+												"$ref": "AAAAAAGVclbIzIYDjHc="
+											},
+											"model": {
+												"$ref": "AAAAAAGVclbkr4YkEgo="
+											},
+											"font": "Arial;13;0",
+											"parentStyle": true,
+											"left": 69,
+											"top": 535,
+											"width": 519,
+											"height": 13,
+											"text": "+Microphone(name: String)",
 											"horizontalAlignment": 0
 										},
 										{
@@ -31537,7 +31555,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 535,
+											"top": 550,
 											"width": 519,
 											"height": 13,
 											"text": "+Start(frequency: int = 44100, channel_count: int = 1, buffer_size: int = 0)",
@@ -31555,7 +31573,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 550,
+											"top": 565,
 											"width": 519,
 											"height": 13,
 											"text": "+Stop()",
@@ -31573,7 +31591,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 565,
+											"top": 580,
 											"width": 519,
 											"height": 13,
 											"text": "+IsAvailable(): boolean",
@@ -31591,7 +31609,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 580,
+											"top": 595,
 											"width": 519,
 											"height": 13,
 											"text": "+SetProcessingInterval(interval: Time)",
@@ -31609,7 +31627,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 595,
+											"top": 610,
 											"width": 519,
 											"height": 13,
 											"text": "+GetDeviceName(): String",
@@ -31627,7 +31645,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 610,
+											"top": 625,
 											"width": 519,
 											"height": 13,
 											"text": "+GetChannelCount(): int",
@@ -31645,7 +31663,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 625,
+											"top": 640,
 											"width": 519,
 											"height": 13,
 											"text": "+GetSampleRate(): int",
@@ -31663,7 +31681,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 640,
+											"top": 655,
 											"width": 519,
 											"height": 13,
 											"text": "+GetSamples(): short[]",
@@ -31681,7 +31699,7 @@
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 655,
+											"top": 670,
 											"width": 519,
 											"height": 13,
 											"text": "+IsCapturing(): boolean",
@@ -31689,20 +31707,20 @@
 										},
 										{
 											"_type": "UMLOperationView",
-											"_id": "AAAAAAGVclbks4YnjmU=",
+											"_id": "AAAAAAGVyJJPCnRbt58=",
 											"_parent": {
 												"$ref": "AAAAAAGVclbIzIYDjHc="
 											},
 											"model": {
-												"$ref": "AAAAAAGVclbkr4YkEgo="
+												"$ref": "AAAAAAGVyJJPBHRYEq8="
 											},
 											"font": "Arial;13;0",
 											"parentStyle": true,
 											"left": 69,
-											"top": 670,
+											"top": 685,
 											"width": 519,
 											"height": 13,
-											"text": "-Microphone(name: String)",
+											"text": "#OnProcessSamples(samples: short[], samples_count: long): boolean",
 											"horizontalAlignment": 0
 										}
 									],
@@ -31711,7 +31729,7 @@
 									"left": 64,
 									"top": 515,
 									"width": 529,
-									"height": 173
+									"height": 188
 								},
 								{
 									"_type": "UMLReceptionCompartmentView",
@@ -31909,7 +31927,7 @@
 											"width": 519.873046875,
 											"height": 13,
 											"underline": true,
-											"text": "+Init()",
+											"text": "-Init()",
 											"horizontalAlignment": 0
 										},
 										{
@@ -31928,7 +31946,7 @@
 											"width": 519.873046875,
 											"height": 13,
 											"underline": true,
-											"text": "+Shutdown()",
+											"text": "-Shutdown()",
 											"horizontalAlignment": 0
 										},
 										{
@@ -36370,8 +36388,27 @@
 										"$ref": "AAAAAAGVclkWnYZTgjw="
 									},
 									"name": "devices",
-									"type": "Microphone[]",
+									"type": "String[]",
 									"direction": "return"
+								}
+							]
+						},
+						{
+							"_type": "UMLOperation",
+							"_id": "AAAAAAGVclbkr4YkEgo=",
+							"_parent": {
+								"$ref": "AAAAAAGVclbIy4X6I64="
+							},
+							"name": "Microphone",
+							"parameters": [
+								{
+									"_type": "UMLParameter",
+									"_id": "AAAAAAGVclc4t4YsrJo=",
+									"_parent": {
+										"$ref": "AAAAAAGVclbkr4YkEgo="
+									},
+									"name": "name",
+									"type": "String"
 								}
 							]
 						},
@@ -36566,21 +36603,40 @@
 						},
 						{
 							"_type": "UMLOperation",
-							"_id": "AAAAAAGVclbkr4YkEgo=",
+							"_id": "AAAAAAGVyJJPBHRYEq8=",
 							"_parent": {
 								"$ref": "AAAAAAGVclbIy4X6I64="
 							},
-							"name": "Microphone",
-							"visibility": "private",
+							"name": "OnProcessSamples",
+							"visibility": "protected",
 							"parameters": [
 								{
 									"_type": "UMLParameter",
-									"_id": "AAAAAAGVclc4t4YsrJo=",
+									"_id": "AAAAAAGVyJLbc3VQnI8=",
 									"_parent": {
-										"$ref": "AAAAAAGVclbkr4YkEgo="
+										"$ref": "AAAAAAGVyJJPBHRYEq8="
 									},
-									"name": "name",
-									"type": "String"
+									"name": "samples",
+									"type": "short[]"
+								},
+								{
+									"_type": "UMLParameter",
+									"_id": "AAAAAAGVyJMb03X9yhw=",
+									"_parent": {
+										"$ref": "AAAAAAGVyJJPBHRYEq8="
+									},
+									"name": "samples_count",
+									"type": "long"
+								},
+								{
+									"_type": "UMLParameter",
+									"_id": "AAAAAAGVyJNjBnbClwY=",
+									"_parent": {
+										"$ref": "AAAAAAGVyJJPBHRYEq8="
+									},
+									"name": "save_on_memory",
+									"type": "boolean",
+									"direction": "return"
 								}
 							]
 						}
@@ -36609,6 +36665,7 @@
 								"$ref": "AAAAAAGVexnjbn6aUsI="
 							},
 							"name": "Init",
+							"visibility": "private",
 							"isStatic": true
 						},
 						{
@@ -36618,6 +36675,7 @@
 								"$ref": "AAAAAAGVexnjbn6aUsI="
 							},
 							"name": "Shutdown",
+							"visibility": "private",
 							"isStatic": true
 						},
 						{
