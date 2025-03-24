@@ -83,3 +83,6 @@ Makefile
 
 # Resources folder
 !*/resources/**
+
+# Libraries config
+!fm-core/libs/config.txt
