@@ -237,7 +237,8 @@ project "openal"
 			"RESTRICT=__restrict",
 			"_CRT_SECURE_NO_WARNINGS",
 			"_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR",
-			"OpenAL_EXPORTS"
+			"OpenAL_EXPORTS",
+			"NDEBUG"
 		}
 
 		disablewarnings {
@@ -267,7 +268,7 @@ project "openal"
 
 	filter {}
 
-	include "config.lua"
+	include "config.txt"
 
 	-- Debug
 	filter "configurations:Debug*"
