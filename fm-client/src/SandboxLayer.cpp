@@ -2,7 +2,7 @@
 
 #include "SandboxLayer.h"
 
-static fm::IpAddress s_Address = fm::IpAddress("192.168.1.178");//79.20.156.247
+static fm::IpAddress s_Address = fm::IpAddress::Localhost;//79.20.156.247 192.168.1.178
 
 void SandboxLayer::Connect() {
 
