@@ -118,13 +118,13 @@ namespace fm {
 
 	Socket::Status ServerSocket::Broadcast(Packet& packet, PacketFlags_ flags, Uint32 channel) {
 
+		std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
 		if (!IsBound())
 			return m_Data->Status;
 
-		std::size_t size;
-		const void* data = packet.OnSend(size);
-		ENetPacket* p = enet_packet_create(data, size, flags);
-		enet_host_broadcast(m_Data->Host, channel, p);
+		for (const auto& [id, socket] : m_Data->Sockets)
+			socket->Send(packet, flags, channel);
 
 		return Socket::Status::Done;
 	}
