@@ -429,6 +429,7 @@ namespace fm {
 		Uint8* tmpData = m_Data;
 		m_Data = new Uint8[size];
 		memcpy_s(m_Data, size, tmpData, m_Size);
+		delete[] tmpData;
 		m_Size = size;
 	}
 }
