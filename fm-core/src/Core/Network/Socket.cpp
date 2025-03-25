@@ -18,32 +18,43 @@ namespace fm {
 
 	public:
 
-		PacketQueue() : m_Head(nullptr), m_Tail(nullptr), m_Length(0) {}
+		PacketQueue()
+			: m_Head(nullptr), m_Tail(nullptr), m_Length(0)
 
-		Node* Front() {
+		{
+
+			m_Head = new Node();
+			m_Tail = m_Head;
+		}
+
+		~PacketQueue() {
+
+			Node* it = m_Head->Next;
+			while (it != nullptr) {
+
+				Node* tmp = it;
+				it = it->Next;
+				enet_packet_destroy(tmp->Packet);
+				delete tmp;
+			}
+
+			delete m_Head;
+		}
+
+		ENetPacket* Front() {
 
 			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-			return m_Head;
+			return m_Head->Next->Packet;
 		}
 
 		void Enqueue(ENetPacket* packet) {
 
 			std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-			if (m_Length == 0) {
-
-				m_Head = new Node();
-				m_Head->Packet = packet;
-				m_Tail = m_Head;
-			}
-
-			else {
-
-				m_Tail->Next = new Node();
-				m_Tail->Next->Packet = packet;
-				m_Tail = m_Tail->Next;
-			}
+			m_Tail->Next = new Node();
+			m_Tail->Next->Packet = packet;
+			m_Tail = m_Tail->Next;
 
 			m_Length++;
 		}
@@ -56,6 +67,7 @@ namespace fm {
 				return;
 
 			Node* tmp = m_Head->Next;
+			enet_packet_destroy(m_Head->Next->Packet);
 			delete m_Head;
 			m_Head = tmp;
 
@@ -69,10 +81,10 @@ namespace fm {
 
 	private:
 
+		std::recursive_mutex m_Mutex;
 		Node* m_Head;
 		Node* m_Tail;
 		std::size_t m_Length;
-		std::recursive_mutex m_Mutex;
 	};
 
 	struct SocketData {
@@ -209,9 +221,8 @@ namespace fm {
 
 		FM_CORE_ASSERT(packet != nullptr, "The packet must not be nullptr");
 
-		Node* node = m_Data->Queue.Front();
-		packet->OnReceive(node->Packet->data, node->Packet->dataLength);
-		enet_packet_destroy(node->Packet);
+		ENetPacket* p = m_Data->Queue.Front();
+		packet->OnReceive(p->data, p->dataLength);
 		m_Data->Queue.Dequeue();
 
 		return Status::Done;
